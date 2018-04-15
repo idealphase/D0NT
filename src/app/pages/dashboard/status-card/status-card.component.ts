@@ -1,6 +1,5 @@
 import { Component, Input, OnInit, ChangeDetectorRef, NgZone,OnDestroy} from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import {ElasticsearchService} from '../../../elasticsearch.service';
 import { Observable } from "rxjs";
 import { TimerObservable } from "rxjs/observable/TimerObservable";
 import { interval } from 'rxjs/observable/interval';
@@ -20,13 +19,13 @@ import { interval } from 'rxjs/observable/interval';
   `,
 })
 export class StatusCardComponent {
-  form: FormGroup;
+  //form: FormGroup;
   number: number;
   on: boolean;
   //private alive: boolean;
   //private interval: number;
 
-  constructor(private fbuilder: FormBuilder, private es: ElasticsearchService, private cd: ChangeDetectorRef) {
+  constructor() {
     this.number = Math.floor(Math.random()*100);
     this.on = true;
     /*

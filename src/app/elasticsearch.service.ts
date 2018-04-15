@@ -6,12 +6,13 @@ import 'rxjs/Rx';
 @Injectable()
 export class ElasticsearchService {
   private client: Client;
+  data = [];
 
   queryalldocs = {
     'query': {
       'match_all': {}
     },
-    'size': 10000, // From our DNS log, There're 6 million record per day
+    'size': 10000, // Default is 10
   };
 
   constructor() {
@@ -27,47 +28,41 @@ export class ElasticsearchService {
     });
   }
 
-  isAvailable(): any {
-    return this.client.ping({
-      requestTimeout: Infinity,
-      body: 'hello JavaSampleApproach!'
-    });
-  }
-
-  getAllDocuments(_index, _type): any {
+  getAllDocuments(_index,_type): any {
     return this.client.search({
       index: _index,
       type: _type,
       body: this.queryalldocs,
-      filterPath: ['hits.hits._source','hits.total']
+      filterPath: ['hits.hits._source','hits.total','hits.hits._id']
     });
   }
 
-  getAllDocumentsWithScroll(_index, _type, _size): any {
-    return this.client.search({
-      index: _index,
-      type: _type,
-      // Set to 1 minute because we are calling right back
-      scroll: '1m',
-      filterPath: ['hits.hits._source', 'hits.total', '_scroll_id'],
-      body: {
-        'size': _size,
-        'query': {
-          'match_all': {}
-        },
-        'sort': [
-          { '_uid': { 'order': 'asc' } }
-        ]
-      }
-    });
+  getAlertDocuments(): any {
+    // console.log("This message log from service")
+    return new Promise((resolve, reject) => {
+      this.client.search({
+        index: "typosquatting_alert",
+        type: "doc",
+        body: this.queryalldocs,
+        filterPath: ['hits.hits._source','hits.total','hits.hits._id'],
+        sort: "timestamp_s"
+      }).then( (res) => {
+        res.hits.hits.forEach(phase => {
+        var temp = {}
+        temp['timestamp_s'] = new Date((phase._source.timestamp_s-25200)*1000).toUTCString()
+        temp['client'] = phase._source.client
+        temp['query'] = phase._source.query
+        temp['_id'] = phase._id
+        temp['answer'] = phase.answer
+        // console.log("temp is ",temp);
+        this.data.push(temp)
+        // console.log("After push this.data is ",this.data);
+      });
+      // console.log("before resolve this.data is ",this.data);
+      resolve(this.data);
+      }, (err) => {
+        reject(err)
+      });
+    })
   }
-
-  getNextPage(scroll_id): any {
-    return this.client.scroll({
-      scrollId: scroll_id,
-      scroll: '1m',
-      filterPath: ['hits.hits._source', 'hits.total', '_scroll_id']
-    });
-  }
-
 }

@@ -1,10 +1,37 @@
 <nb-card>
-  <nb-card-header>
-    Smart Table
+  <nb-card-header style="font-size: 30px;">
+    Domain Name Typosquatting Alert
   </nb-card-header>
 
   <nb-card-body>
-    <ng2-smart-table [settings]="settings" [source]="source" (deleteConfirm)="onDeleteConfirm($event)">
+    <!-- <div *ngFor="let alertSource of alertSources">
+      <ng2-smart-table [settings]="settings" [source]="alertSource" (deleteConfirm)="onDeleteConfirm($event)"> 
+      </ng2-smart-table>
+    </div> -->
+    <ng2-smart-table [settings]="settings" [source]="source" (deleteConfirm)="onDeleteConfirm($event)"> 
     </ng2-smart-table>
   </nb-card-body>
+  <!--
+  <div *ngFor="let alertSource of alertSources" style="margin-top:20px">
+    {{ alertSource._source.timestamp_s}}
+  </div>
+  -->
 </nb-card>
+<!--
+<nb-card>
+  <div *ngFor="let alertSource of alertSources" style="margin-top:20px">
+    <div>
+      <label>timestamp: </label> {{ alertSource._source.timestamp_s*1000 | date:'yyyy-MM-dd HH:mm:ss ':'-0000'}}
+    </div>
+    <div>
+      <label>client: </label> {{ alertSource._source.client}}
+    </div>
+    <div>
+      <label>query: </label> {{ alertSource._source.query}}
+    </div>
+    <div>
+      <label>_id:</label> {{ alertSource._id}}
+    </div>
+  </div>
+</nb-card>
+-->

@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 
 import { NgxEchartsModule } from 'ngx-echarts';
+import { Ng2SmartTableModule } from 'ng2-smart-table';
 
 import { ThemeModule } from '../../@theme/theme.module';
 import { DashboardComponent } from './dashboard.component';
@@ -24,11 +25,14 @@ import { EchartsSeriesTypeComponent } from '../charts/echarts/echarts-series-typ
 import { EchartsSeriesTypeChartComponent } from '../charts/echarts/echarts-series-type-chart.component';
 import { EchartsSeriesErrorComponent } from '../charts/echarts/echarts-series-error.component'
 import { EchartsSeriesErrorChartComponent } from '../charts/echarts/echarts-series-error-chart.component';
+import { SmartTableComponent } from '../tables/smart-table/smart-table.component';
+//import { TablesComponent} from '../tables/tables.component';
 
 @NgModule({
   imports: [
     ThemeModule,
     NgxEchartsModule,
+    Ng2SmartTableModule,
   ],
   declarations: [
     DashboardComponent,
@@ -52,6 +56,7 @@ import { EchartsSeriesErrorChartComponent } from '../charts/echarts/echarts-seri
     EchartsSeriesTypeChartComponent,
     EchartsSeriesErrorComponent,
     EchartsSeriesErrorChartComponent,
+    SmartTableComponent,
   ],
 })
 export class DashboardModule { }
