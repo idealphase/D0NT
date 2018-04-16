@@ -37,24 +37,33 @@ export class ElasticsearchService {
     });
   }
 
+  deleteAlertDocument(_id): any {
+    return this.client.delete({
+        index: "typosquatting_alert",
+        type: "doc",
+        id: _id,
+      });  
+  }
+
   getAlertDocuments(): any {
     // console.log("This message log from service")
     return new Promise((resolve, reject) => {
+      this.data = [];
       this.client.search({
         index: "typosquatting_alert",
         type: "doc",
         body: this.queryalldocs,
         filterPath: ['hits.hits._source','hits.total','hits.hits._id'],
-        sort: "timestamp_s"
+        //sort: "timestamp_s"  //change to sort in column smart table instead
       }).then( (res) => {
         res.hits.hits.forEach(phase => {
         var temp = {}
-        temp['timestamp_s'] = new Date((phase._source.timestamp_s-25200)*1000).toUTCString()
+        temp['timestamp_s'] = new Date((phase._source.timestamp_s+25200)*1000).toUTCString()
         temp['client'] = phase._source.client
         temp['query'] = phase._source.query
         temp['_id'] = phase._id
-        temp['answer'] = phase.answer
-        // console.log("temp is ",temp);
+        temp['answer'] = phase._source.answer
+        //console.log("temp is ",temp);
         this.data.push(temp)
         // console.log("After push this.data is ",this.data);
       });

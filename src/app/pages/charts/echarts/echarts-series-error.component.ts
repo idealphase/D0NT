@@ -25,8 +25,8 @@ import { NbThemeService } from '@nebular/theme';
   `,
 })
 export class EchartsSeriesErrorComponent implements OnDestroy {
-  type = '24h';
-  types = ['24h', '3d', '7d', '30d'];
+  type = '24 h';
+  types = ['24 h', '3 d', '7 d', '30 d'];
   currentTheme: string;
   themeSubscription: any;
 
