@@ -9,14 +9,14 @@ import { NbThemeService } from '@nebular/theme';
     <nb-card-header> 
     <span style="font-size: 30px;">DNS QType Series</span>
     <div class="dropdown ghost-dropdown" ngbDropdown>
-      <button type="button" class="btn btn-sm" ngbDropdownToggle
-            [ngClass]="{ 'btn-success': currentTheme == 'default', 'btn-primary': currentTheme != 'default'}">
-      {{ type }}
-      </button>
-      <ul ngbDropdownMenu class="dropdown-menu">
-        <li class="dropdown-item" *ngFor="let t of types" (click)="type = t">{{ t }}</li>
-      </ul>
-    </div>
+    <button type="button" class="btn btn-sm" ngbDropdownToggle
+          [ngClass]="{ 'btn-success': currentTheme == 'default', 'btn-primary': currentTheme != 'default'}">
+    {{ type }}
+    </button>
+    <ul ngbDropdownMenu class="dropdown-menu">
+      <li class="dropdown-item" *ngFor="let t of types" (click)="type = t">{{ t }}</li>
+    </ul>
+  </div>
     </nb-card-header>
     <nb-card-body style="height: 650px;">
       <ngx-echarts-series-type-chart></ngx-echarts-series-type-chart>

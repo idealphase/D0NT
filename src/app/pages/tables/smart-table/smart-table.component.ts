@@ -15,48 +15,45 @@ import { NbThemeService } from '@nebular/theme';
 @Component({
   selector: 'ngx-smart-table',
   templateUrl: './smart-table.component.html',
-  /*styles: [`
-    nb-card {
-      transform: translate3d(0, 0, 0);
-    }
-  `],*/
   styleUrls: ['../../charts/echarts/ngx-echarts-series.scss'],
 
 })
 
 export class SmartTableComponent implements OnInit , OnDestroy{
   private interval: number;
-  type = '5 s';
-  types = ['1 s','3 s', '5 s', '10 s', '30 s', '1 m'];
+  type = 'Set Interval 5 s';
+  types = ['Set Interval 1 s','Set Interval 3 s', 'Set Interval 5 s', 'Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 1 m'];
   currentTheme: string;
   themeSubscription: any;
   source: LocalDataSource = new LocalDataSource ;
-  timerSubscription: Subscription;
 
   async getAlert(){
     return await this.es.getAlertDocuments()
   }
 
+  sleep = (time) => new Promise((resolve, reject) => {
+    setTimeout(resolve, time);
+  })
+
   async ngOnInit(){
-    // const data = await this.es.getAlertDocuments()
-    // this.source.load(data) 
-    //this.source.load(await this.getAlert())   
-    this.timerSubscription = TimerObservable.create(0,this.interval).subscribe(async (res) =>{
+    while (true) {
       this.source.load(await this.getAlert());
-      if (this.type === '1 s') {
+      if (this.type === 'Set Interval 1 s') {
         this.interval = 1000
-      } else if(this.type === '3 s') {
+      } else if(this.type === 'Set Interval 3 s') {
         this.interval = 3000
-      } else if(this.type === '5 s') {
+      } else if(this.type === 'Set Interval 5 s') {
         this.interval = 5000
-      } else if(this.type === '10 s') {
+      } else if(this.type === 'Set Interval 10 s') {
         this.interval = 10000
-      } else if(this.type === '30 s') {
+      } else if(this.type === 'Set Interval 30 s') {
         this.interval = 30000
-      } else if(this.type === '1 m') {
+      } else if(this.type === 'Set Interval 1 m') {
         this.interval = 60000
       }
-    })
+      console.log(`interval: ${this.interval}`);
+      await this.sleep(this.interval);
+    }
   }
 
   settings = {
@@ -69,7 +66,6 @@ export class SmartTableComponent implements OnInit , OnDestroy{
       edit: false,
     },
     hideSubHeader: true,
-    // Domain name Typosquatting Table
     columns: {
       timestamp_s: {
         title: 'Timestamp',
@@ -107,26 +103,16 @@ export class SmartTableComponent implements OnInit , OnDestroy{
     });
   }
 
-onDeleteConfirm(event): void {
-    if (window.confirm('Are you sure you want to delete?')) {
-      event.confirm.resolve();
-      this.es.deleteAlertDocument(event.data._id)
-    } else {
-      event.confirm.reject();
-    }
+  onDeleteConfirm(event): void {
+      if (window.confirm('Are you sure you want to delete?')) {
+        event.confirm.resolve();
+        this.es.deleteAlertDocument(event.data._id)
+      } else {
+        event.confirm.reject();
+      }
   }
 
-ngOnDestroy(){
-  this.themeSubscription.unsubscribe();
-  this.timerSubscription.unsubscribe();
-}
-  // https://www.djamware.com/post/5a0673c880aca7739224ee21/mean-stack-angular-5-crud-web-application-example
-  /*
-  books: any;
-  constructor(private http: HttpClient ) { }
-  ngOnInit() {
-    this.http.get('/book').subscribe(data => {
-      this.books = data;
-    });
-  }*/
+  ngOnDestroy(){
+    this.themeSubscription.unsubscribe();
+  }
 }

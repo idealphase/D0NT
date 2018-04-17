@@ -9,16 +9,34 @@ import { NbThemeService } from '@nebular/theme';
   `,
 })
 export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy {
-  type = '24h';
-  types = ['24h', '3d', '7d', '30d'];
+  type_data = 'Data in 1 h';
+  types_data = ['Data in 1 h','Data in 24 h', 'Data in 3 d', 'Data in 7 d', 'Data in 30 d'];
+  type_interval = 'Set Interval 5 s';
+  types_interval = ['Set Interval 1 s','Set Interval 3 s', 'Set Interval 5 s', 'Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 1 m'];
   options: any = {};
   themeSubscription: any;
+  sumDataList = []
+  aDataList = []
+  aaaaDataList = []
+  nsDataList = []
+  mxDataList = []
+  otherDataList = []
+  private interval: number;
+  currentTheme: string;
 
-  constructor(private theme: NbThemeService) {
+  sleep = (time) => new Promise((resolve, reject) => {
+    setTimeout(resolve, time);
+  })
+
+  constructor(private themeService: NbThemeService) {
+    this.interval = 5000;
+    this.themeSubscription = this.themeService.getJsTheme().subscribe(theme => {
+      this.currentTheme = theme.name;
+    });
   }
 
   ngAfterViewInit() {
-    this.themeSubscription = this.theme.getJsTheme().subscribe(config => {
+    this.themeSubscription = this.themeService.getJsTheme().subscribe(config => {
       const colors: any = config.variables;
       const echarts: any = config.variables.echarts;
       var xAxisData = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30];
