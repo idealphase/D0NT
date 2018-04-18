@@ -20,7 +20,7 @@ import { interval } from 'rxjs/observable/interval';
 })
 export class StatusCardComponent {
   //form: FormGroup;
-  number: number;
+  @Input() number: number;
   on: boolean;
   //private alive: boolean;
   //private interval: number;

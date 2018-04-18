@@ -14,6 +14,7 @@ import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
 import { ThemeModule } from './@theme/theme.module';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
+import { MomentModule } from 'ngx-moment';
 
 import {ElasticsearchService} from './elasticsearch.service';
 @NgModule({
@@ -27,6 +28,7 @@ import {ElasticsearchService} from './elasticsearch.service';
     NgbModule.forRoot(),
     ThemeModule.forRoot(),
     CoreModule.forRoot(),
+    MomentModule,
   ],
   bootstrap: [AppComponent],
   providers: [

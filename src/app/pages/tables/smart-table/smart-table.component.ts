@@ -51,7 +51,7 @@ export class SmartTableComponent implements OnInit , OnDestroy{
       } else if(this.type === 'Set Interval 1 m') {
         this.interval = 60000
       }
-      console.log(`interval: ${this.interval}`);
+      //console.log(`interval: ${this.interval}`);
       await this.sleep(this.interval);
     }
   }

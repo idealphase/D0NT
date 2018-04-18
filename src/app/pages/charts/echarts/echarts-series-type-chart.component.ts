@@ -1,19 +1,19 @@
-import { AfterViewInit, Component, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, Input , OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { NbThemeService } from '@nebular/theme';
+import { MomentModule } from 'ngx-moment';
 
 @Component({
   selector: 'ngx-echarts-series-type-chart',
   //styleUrls: ['./ngx-echarts-series.scss'],
   template: `
-    <div echarts [options]="options" class="echart"></div>
+    <div echarts [options]="options" class="echart"></div> 
+    type_interval is {{type_interval}}
   `,
 })
-export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy {
-  type_data = 'Data in 1 h';
-  types_data = ['Data in 1 h','Data in 24 h', 'Data in 3 d', 'Data in 7 d', 'Data in 30 d'];
-  type_interval = 'Set Interval 5 s';
-  types_interval = ['Set Interval 1 s','Set Interval 3 s', 'Set Interval 5 s', 'Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 1 m'];
+export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy , OnChanges /*OnInit*/ {
   options: any = {};
+  //@Input() type_data: string;
+  @Input() type_interval: string;
   themeSubscription: any;
   sumDataList = []
   aDataList = []
@@ -21,8 +21,11 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
   nsDataList = []
   mxDataList = []
   otherDataList = []
+  private numberOfPoint: number;
   private interval: number;
   currentTheme: string;
+  currentTime: any;
+  xAxisData = []
 
   sleep = (time) => new Promise((resolve, reject) => {
     setTimeout(resolve, time);
@@ -30,16 +33,75 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
 
   constructor(private themeService: NbThemeService) {
     this.interval = 5000;
+    this.numberOfPoint = 60;
     this.themeSubscription = this.themeService.getJsTheme().subscribe(theme => {
       this.currentTheme = theme.name;
     });
   }
 
-  ngAfterViewInit() {
+  ngOnChanges(changes: SimpleChanges) {
+    for (let propName in changes){
+      let chng = changes[propName];
+      let cur  = JSON.stringify(chng.currentValue);
+      let prev = JSON.stringify(chng.previousValue);
+      console.log(`${propName}: currentValue = ${cur}, previousValue = ${prev}`);
+      if (this.type_interval === 'Set Interval 1 s') {
+        this.interval = 1000
+      } else if(this.type_interval === 'Set Interval 3 s') {
+        this.interval = 3000
+      } else if(this.type_interval === 'Set Interval 5 s') {
+        this.interval = 5000
+      } else if(this.type_interval === 'Set Interval 10 s') {
+        this.interval = 10000
+      } else if(this.type_interval === 'Set Interval 30 s') {
+        this.interval = 30000
+      } else if(this.type_interval === 'Set Interval 1 m') {
+        this.interval = 60000
+      }
+      console.log('this.interval is ',this.interval)
+    }
+  }
+
+  drawEchart(){
+    this.currentTime = new Date()
+    if(this.xAxisData.length > this.numberOfPoint){
+      this.xAxisData.shift()
+    }
+    this.xAxisData.push(this.currentTime)
+    var randomA = Math.round(Math.random()*1000)
+    var randomAAAA = Math.round(Math.random()*1000)
+    var randomNS = Math.round(Math.random()*1000)
+    var randomMX = Math.round(Math.random()*1000)
+    var randomOTHER = Math.round(Math.random()*1000)
+    var sumOfRandom = randomA + randomAAAA + randomNS + randomMX + randomOTHER
+
+    if(this.sumDataList.length > this.numberOfPoint){
+      this.sumDataList.shift()
+    }
+    this.sumDataList.push(sumOfRandom)
+    if(this.aDataList.length > this.numberOfPoint){
+      this.aDataList.shift()
+    }
+    this.aDataList.push(randomA)
+    if(this.aaaaDataList.length > this.numberOfPoint){
+      this.aaaaDataList.shift()
+    }
+    this.aaaaDataList.push(randomAAAA)
+    if(this.nsDataList.length > this.numberOfPoint){
+      this.nsDataList.shift()
+    }
+    this.nsDataList.push(randomNS)
+    if(this.mxDataList.length > this.numberOfPoint){
+      this.mxDataList.shift()
+    }
+    this.mxDataList.push(randomMX)
+    if(this.otherDataList.length > this.numberOfPoint){
+      this.otherDataList.shift()
+    }
+    this.otherDataList.push(randomOTHER)
     this.themeSubscription = this.themeService.getJsTheme().subscribe(config => {
       const colors: any = config.variables;
       const echarts: any = config.variables.echarts;
-      var xAxisData = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30];
       var lineStyle = {
         normal: {
           width: 1
@@ -208,7 +270,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             gridIndex: 1,
@@ -219,7 +281,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             gridIndex: 2,
@@ -230,7 +292,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             gridIndex: 3,
@@ -241,7 +303,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             gridIndex: 4,
@@ -252,7 +314,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             name: 'Time',
@@ -273,7 +335,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 color: '#57617B'
               }
             },
-            data: xAxisData,
+            data: this.xAxisData,
           }
         ],
 
@@ -468,7 +530,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 globalCoord: false,
               },
             },
-            data: [100, 132, 101, 134, 90, 230, 100, 132, 101, 134, 90, 230, 100, 132, 101, 134, 90, 230],
+            data: this.sumDataList,
           },
           {
             name: 'A',
@@ -494,7 +556,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 globalCoord: false,
               },
             },
-            data: [220, 182, 191, 234, 290, 330, 220, 182, 191, 234, 290, 330, 220, 182, 191, 234, 290, 330],
+            data: this.aDataList,
           },
           {
             name: 'AAAA',
@@ -520,7 +582,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 globalCoord: false,
               },
             },
-            data: [150, 232, 201, 154, 190, 330, 150, 232, 201, 154, 190, 330, 150, 232, 201, 154, 190, 330],
+            data: this.aaaaDataList
           },
           {
             name: 'NS',
@@ -546,7 +608,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 globalCoord: false,
               },
             },
-            data: [320, 332, 301, 334, 390, 330, 320, 332, 301, 334, 390, 330, 320, 332, 301, 334, 390, 330],
+            data: this.nsDataList
           },
           {
             name: 'MX',
@@ -572,7 +634,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 globalCoord: false,
               },
             },
-            data: [820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330],
+            data: this.mxDataList
           },
           {
             name: 'Other',
@@ -598,15 +660,21 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 globalCoord: false,
               },
             },
-            data: [820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330],
+            data: this.otherDataList
           },
         ],
-
-
       };
     });
   }
 
+  async ngAfterViewInit() {
+    while (true) {
+      this.drawEchart();
+      await this.sleep(this.interval);
+    }
+  }
+
+  
   ngOnDestroy(): void {
     this.themeSubscription.unsubscribe();
   }

@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { SmartTableComponent } from '../tables/smart-table/smart-table.component';
 
 @Component({
   selector: 'ngx-dashboard',
@@ -6,5 +7,4 @@ import { Component } from '@angular/core';
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent {
-
 }
