@@ -1,16 +1,17 @@
-import { AfterViewInit, Component, OnDestroy, Input , OnInit, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, Input , OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { NbThemeService } from '@nebular/theme';
 import { MomentModule } from 'ngx-moment';
+import { ElasticsearchService } from '../../../elasticsearch.service';
 
 @Component({
   selector: 'ngx-echarts-series-type-chart',
+  //changeDetection: ChangeDetectionStrategy.OnPush,
   //styleUrls: ['./ngx-echarts-series.scss'],
   template: `
     <div echarts [options]="options" class="echart"></div> 
-    type_interval is {{type_interval}}
   `,
 })
-export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy , OnChanges /*OnInit*/ {
+export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy , OnChanges /*OnInit*/{
   options: any = {};
   //@Input() type_data: string;
   @Input() type_interval: string;
@@ -25,18 +26,83 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
   private interval: number;
   currentTheme: string;
   currentTime: any;
+  currentTime_year: any;
+  currentTime_month: any;
+  currentTime_date: any;
+  prevTime_timestamp_s: any;
+  currentTime_timestamp_s: any;
   xAxisData = []
+  delay_time = 120
+
+
+  async getDNS(){
+    this.currentTime = new Date();
+    this.currentTime_year = this.currentTime.getFullYear();
+    this.currentTime_month = ("0"+(this.currentTime.getMonth()+1)).slice(-2);
+    this.currentTime_date = ("0"+this.currentTime.getDate()).slice(-2);
+    this.prevTime_timestamp_s = this.currentTime_timestamp_s;
+    this.currentTime_timestamp_s = Math.round((this.currentTime.getTime()-this.delay_time)/1000);
+    console.log("prev time ",this.prevTime_timestamp_s,"current time ",this.currentTime_timestamp_s)
+    //console.log(this.currentTime_timestamp_s) // 1524216488
+    //console.log(this.currentTime_year,this.currentTime_month,this.currentTime_date,this.currentTime_timestamp_s);
+    var tempDNS =  await this.es.getDNSDocuments(this.currentTime_year,this.currentTime_month,this.currentTime_date,this.prevTime_timestamp_s,this.currentTime_timestamp_s);
+    console.log(tempDNS)
+    if(this.xAxisData.length > this.numberOfPoint){
+      this.xAxisData.shift()
+    }
+    this.xAxisData.push(this.currentTime)
+    // var randomA = Math.round(Math.random()*1000)
+    // var randomAAAA = Math.round(Math.random()*1000)
+    // var randomNS = Math.round(Math.random()*1000)
+    // var randomMX = Math.round(Math.random()*1000)
+    // var randomOTHER = Math.round(Math.random()*1000)
+    // var sumOfRandom = randomA + randomAAAA + randomNS + randomMX + randomOTHER
+
+    if(this.sumDataList.length > this.numberOfPoint){
+      this.sumDataList.shift()
+    }
+    // this.sumDataList.push(sumOfRandom)
+    this.sumDataList.push(tempDNS["SUM"])
+    if(this.aDataList.length > this.numberOfPoint){
+      this.aDataList.shift()
+    }
+    //this.aDataList.push(randomA)
+    this.aDataList.push(tempDNS["A"])
+    if(this.aaaaDataList.length > this.numberOfPoint){
+      this.aaaaDataList.shift()
+    }
+    //this.aaaaDataList.push(randomAAAA)
+    this.aaaaDataList.push(tempDNS["AAAA"]);
+    if(this.nsDataList.length > this.numberOfPoint){
+      this.nsDataList.shift()
+    }
+    //this.nsDataList.push(randomNS)
+    this.nsDataList.push(tempDNS["NS"])
+    if(this.mxDataList.length > this.numberOfPoint){
+      this.mxDataList.shift()
+    }
+    //this.mxDataList.push(randomMX)
+    this.mxDataList.push(tempDNS["MX"])
+    if(this.otherDataList.length > this.numberOfPoint){
+      this.otherDataList.shift()
+    }
+    //this.otherDataList.push(randomOTHER)
+    this.otherDataList.push(tempDNS["OTHER"])
+  }
 
   sleep = (time) => new Promise((resolve, reject) => {
+    // console.log('sleep function',new Date())
+    this.cd.detectChanges();
     setTimeout(resolve, time);
   })
 
-  constructor(private themeService: NbThemeService) {
+  constructor(private es: ElasticsearchService,private themeService: NbThemeService,private cd: ChangeDetectorRef) {
     this.interval = 5000;
     this.numberOfPoint = 60;
     this.themeSubscription = this.themeService.getJsTheme().subscribe(theme => {
       this.currentTheme = theme.name;
     });
+    this.currentTime_timestamp_s = Math.round((new Date().getTime()-this.delay_time)/1000);
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -58,47 +124,11 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
       } else if(this.type_interval === 'Set Interval 1 m') {
         this.interval = 60000
       }
-      console.log('this.interval is ',this.interval)
+      console.log('Updated this.interval is ',this.interval)
     }
   }
 
   drawEchart(){
-    this.currentTime = new Date()
-    if(this.xAxisData.length > this.numberOfPoint){
-      this.xAxisData.shift()
-    }
-    this.xAxisData.push(this.currentTime)
-    var randomA = Math.round(Math.random()*1000)
-    var randomAAAA = Math.round(Math.random()*1000)
-    var randomNS = Math.round(Math.random()*1000)
-    var randomMX = Math.round(Math.random()*1000)
-    var randomOTHER = Math.round(Math.random()*1000)
-    var sumOfRandom = randomA + randomAAAA + randomNS + randomMX + randomOTHER
-
-    if(this.sumDataList.length > this.numberOfPoint){
-      this.sumDataList.shift()
-    }
-    this.sumDataList.push(sumOfRandom)
-    if(this.aDataList.length > this.numberOfPoint){
-      this.aDataList.shift()
-    }
-    this.aDataList.push(randomA)
-    if(this.aaaaDataList.length > this.numberOfPoint){
-      this.aaaaDataList.shift()
-    }
-    this.aaaaDataList.push(randomAAAA)
-    if(this.nsDataList.length > this.numberOfPoint){
-      this.nsDataList.shift()
-    }
-    this.nsDataList.push(randomNS)
-    if(this.mxDataList.length > this.numberOfPoint){
-      this.mxDataList.shift()
-    }
-    this.mxDataList.push(randomMX)
-    if(this.otherDataList.length > this.numberOfPoint){
-      this.otherDataList.shift()
-    }
-    this.otherDataList.push(randomOTHER)
     this.themeSubscription = this.themeService.getJsTheme().subscribe(config => {
       const colors: any = config.variables;
       const echarts: any = config.variables.echarts;
@@ -669,12 +699,12 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
 
   async ngAfterViewInit() {
     while (true) {
+      this.getDNS();
       this.drawEchart();
       await this.sleep(this.interval);
     }
   }
 
-  
   ngOnDestroy(): void {
     this.themeSubscription.unsubscribe();
   }

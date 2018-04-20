@@ -1,4 +1,4 @@
-import { AfterViewInit,Component,OnInit, OnDestroy } from '@angular/core';
+import { AfterViewInit,Component,OnInit, OnDestroy,ChangeDetectorRef } from '@angular/core';
 import { LocalDataSource } from 'ng2-smart-table';
 
 import { SmartTableService } from '../../../@core/data/smart-table.service';
@@ -10,6 +10,7 @@ import { TimerObservable } from "rxjs/observable/TimerObservable";
 import { interval } from 'rxjs/observable/interval';
 import { AlertSource, Alert } from '../../dashboard/alert/alert.interface';
 import { NbThemeService } from '@nebular/theme';
+import { ChangeDetectionStrategy } from '@angular/compiler/src/core';
 
 
 @Component({
@@ -96,7 +97,7 @@ export class SmartTableComponent implements OnInit , OnDestroy{
     },
   };
 
-  constructor(private es: ElasticsearchService,private themeService: NbThemeService) {
+  constructor(private es: ElasticsearchService,private themeService: NbThemeService,private cd: ChangeDetectorRef) {
     this.interval = 5000;
     this.themeSubscription = this.themeService.getJsTheme().subscribe(theme => {
       this.currentTheme = theme.name;
