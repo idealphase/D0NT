@@ -2,6 +2,8 @@ import { Injectable, ErrorHandler } from '@angular/core';
 import { Client } from 'elasticsearch';
 import { Observable } from 'rxjs';
 import 'rxjs/Rx';
+//import { resolve } from 'path';
+//import { reject } from 'q';
 
 @Injectable()
 export class ElasticsearchService {
@@ -28,6 +30,30 @@ export class ElasticsearchService {
     });
   }
 
+  checkTodayIndexExist(_year,_month,_date): any {
+    return new Promise((resolve,reject) =>{
+      this.client.indices.exists({
+        index: "filebeat-6.2.2-".concat(_year+"."+_month+"."+_date),
+      }).then( (res) => {
+        resolve(res);
+      }, (err) =>{
+        reject(err.status)
+      });
+    })
+  }
+
+  createTodayIndex(_year,_month,_date): any {
+    return new Promise((resolve,reject) =>{
+      this.client.indices.create({
+      index: "filebeat-6.2.2-".concat(_year+"."+_month+"."+_date),
+    }).then((res) =>{
+      resolve(res);
+    }, (err) =>{
+      reject(err)
+    })
+    })
+  }
+
   getDNSDocuments(_year,_month,_date,_prev_timestamp,_timestamp_s): any {
     return new Promise((resolve, reject) => {
       this.client.search({
@@ -39,46 +65,103 @@ export class ElasticsearchService {
               'timestamp_s':{
                 "gt": _prev_timestamp,
                 "lte": _timestamp_s,
-              },
-            },
+                //"boost": 2  //priority if search in multi column
+              }
+            }
           },
           'size': 10000, //Default is 10
         },
         //filterPath: ['hits.hits._source','hits.total','hits.hits._id']
       }).then( (res) => {
-        var dns ={
+        var dns_data ={
           "SUM":0,
           "A":0,
+          "CNAME":0,
           "AAAA":0,
           "NS":0,
+          "PTR":0,
           "MX":0,
           "OTHER":0,
         }
         res.hits.hits.forEach(element =>{
           if (element._source.type === "A"){
-            dns["A"]++;
+            dns_data["A"]++;
+          }
+          else if(element._source.type === "CNAME"){
+            dns_data["CNAME"]++;
           }
           else if(element._source.type === "AAAA"){
-            dns["AAAA"]++;
+            dns_data["AAAA"]++;
           }
           else if(element._source.type === "NS"){
-            dns["NS"]++;
+            dns_data["NS"]++;
+          }
+          else if(element._source.type === "PTR"){
+            dns_data["PTR"]++;
           }
           else if(element._source.type === "MX"){
-            dns["MX"]++;
+            dns_data["MX"]++;
           }
           else{
-            dns["OTHER"]++;
+            dns_data["OTHER"]++;
           }
         })
-        dns["SUM"] = dns["A"]+dns["AAAA"]+dns["NS"]+dns["MX"]+dns["OTHER"]
-        resolve(dns);
+        dns_data["SUM"] = dns_data["A"]+dns_data["CNAME"]+dns_data["AAAA"]+dns_data["NS"]+dns_data["PTR"]+dns_data["MX"]+dns_data["OTHER"]
+        resolve(dns_data);
       }, (err) =>{
         reject(err)
       });
     })
   }
 
+  getErrorDocuments(_year,_month,_date,_prev_timestamp,_timestamp_s): any {
+    return new Promise((resolve, reject) => {
+      this.client.search({
+        index: "filebeat-6.2.2-".concat(_year+"."+_month+"."+_date),
+        type: "doc",
+        body: {
+          'query':{
+            'range':{
+              'timestamp_s':{
+                "gt": _prev_timestamp,
+                "lte": _timestamp_s,
+                //"boost": 2  //priority if search in multi column
+              }
+            }
+          },
+          'size': 10000, //Default is 10
+        },
+        //filterPath: ['hits.hits._source','hits.total','hits.hits._id']
+      }).then( (res) => {
+        var dns_data ={
+          "SUM":0,
+          "NXDOMAIN":0,
+          "REFUSED":0,
+          "SERVFAIL":0,
+          "FORMERR":0,
+        }
+        res.hits.hits.forEach(element =>{
+          if (element._source.answer === "NXDOMAIN"){
+            dns_data["NXDOMAIN"]++;
+          }
+          else if(element._source.answer === "REFUSED"){
+            dns_data["REFUSED"]++;
+          }
+          else if(element._source.answer === "SERVFAIL"){
+            dns_data["SERVFAIL"]++;
+          }
+          else if(element._source.answer === "FORMERR"){
+            dns_data["FORMERR"]++;
+          }
+        })
+        dns_data["SUM"] = dns_data["NXDOMAIN"]+dns_data["REFUSED"]+dns_data["SERVFAIL"]+dns_data["FORMERR"];
+        resolve(dns_data);
+      }, (err) =>{
+        reject(err)
+      });
+    })
+  }
+  
   deleteAlertDocument(_id): any {
     return this.client.delete({
         index: "typosquatting_alert",

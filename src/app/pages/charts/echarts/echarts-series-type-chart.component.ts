@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnDestroy, Input , OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, Input , OnChanges, SimpleChanges, ChangeDetectorRef, OnInit} from '@angular/core';
 import { NbThemeService } from '@nebular/theme';
 import { MomentModule } from 'ngx-moment';
 import { ElasticsearchService } from '../../../elasticsearch.service';
@@ -11,15 +11,17 @@ import { ElasticsearchService } from '../../../elasticsearch.service';
     <div echarts [options]="options" class="echart"></div> 
   `,
 })
-export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy , OnChanges /*OnInit*/{
+export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy , OnChanges /*,OnInit*/{
   options: any = {};
   //@Input() type_data: string;
   @Input() type_interval: string;
   themeSubscription: any;
   sumDataList = []
   aDataList = []
+  cnameDataList = []
   aaaaDataList = []
   nsDataList = []
+  ptrDataList = []
   mxDataList = []
   otherDataList = []
   private numberOfPoint: number;
@@ -32,8 +34,17 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
   prevTime_timestamp_s: any;
   currentTime_timestamp_s: any;
   xAxisData = []
-  delay_time = 120
+  delay_time = 240
 
+  //color of echart
+  sum_color = "#E74C3C"
+  a_color = "#8E44AD"
+  cname_color = "#2980B9"
+  aaaa_color = "#16A085"
+  ns_color = "#388E3C"
+  ptr_color = "#8BC34A"
+  mx_color = "#F39C12"
+  other_color = "#FFEE58"
 
   async getDNS(){
     this.currentTime = new Date();
@@ -45,53 +56,61 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
     console.log("prev time ",this.prevTime_timestamp_s,"current time ",this.currentTime_timestamp_s)
     //console.log(this.currentTime_timestamp_s) // 1524216488
     //console.log(this.currentTime_year,this.currentTime_month,this.currentTime_date,this.currentTime_timestamp_s);
+    var isTodayIndexExist = await this.es.checkTodayIndexExist(this.currentTime_year,this.currentTime_month,this.currentTime_date)
+    //create today index in case don't have index exist
+    if(isTodayIndexExist === false){
+      await this.es.createTodayIndex(this.currentTime_year,this.currentTime_month,this.currentTime_date)
+      console.log("[+] Created today index , ","filebeat-6.2.2-".concat(this.currentTime_year+"."+this.currentTime_month+"."+this.currentTime_date))
+    }
     var tempDNS =  await this.es.getDNSDocuments(this.currentTime_year,this.currentTime_month,this.currentTime_date,this.prevTime_timestamp_s,this.currentTime_timestamp_s);
     console.log(tempDNS)
     if(this.xAxisData.length > this.numberOfPoint){
       this.xAxisData.shift()
     }
     this.xAxisData.push(this.currentTime)
-    // var randomA = Math.round(Math.random()*1000)
-    // var randomAAAA = Math.round(Math.random()*1000)
-    // var randomNS = Math.round(Math.random()*1000)
-    // var randomMX = Math.round(Math.random()*1000)
-    // var randomOTHER = Math.round(Math.random()*1000)
-    // var sumOfRandom = randomA + randomAAAA + randomNS + randomMX + randomOTHER
 
     if(this.sumDataList.length > this.numberOfPoint){
       this.sumDataList.shift()
     }
-    // this.sumDataList.push(sumOfRandom)
     this.sumDataList.push(tempDNS["SUM"])
+
     if(this.aDataList.length > this.numberOfPoint){
       this.aDataList.shift()
     }
-    //this.aDataList.push(randomA)
     this.aDataList.push(tempDNS["A"])
+
+    if(this.cnameDataList.length > this.numberOfPoint){
+      this.cnameDataList.shift()
+    }
+    this.cnameDataList.push(tempDNS["CNAME"])
+
     if(this.aaaaDataList.length > this.numberOfPoint){
       this.aaaaDataList.shift()
     }
-    //this.aaaaDataList.push(randomAAAA)
     this.aaaaDataList.push(tempDNS["AAAA"]);
+
     if(this.nsDataList.length > this.numberOfPoint){
       this.nsDataList.shift()
     }
-    //this.nsDataList.push(randomNS)
     this.nsDataList.push(tempDNS["NS"])
+
     if(this.mxDataList.length > this.numberOfPoint){
       this.mxDataList.shift()
     }
-    //this.mxDataList.push(randomMX)
     this.mxDataList.push(tempDNS["MX"])
+
+    if(this.ptrDataList.length > this.numberOfPoint){
+      this.ptrDataList.shift()
+    }
+    this.ptrDataList.push(tempDNS["PTR"])
+
     if(this.otherDataList.length > this.numberOfPoint){
       this.otherDataList.shift()
     }
-    //this.otherDataList.push(randomOTHER)
     this.otherDataList.push(tempDNS["OTHER"])
   }
 
   sleep = (time) => new Promise((resolve, reject) => {
-    // console.log('sleep function',new Date())
     this.cd.detectChanges();
     setTimeout(resolve, time);
   })
@@ -111,11 +130,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
       let cur  = JSON.stringify(chng.currentValue);
       let prev = JSON.stringify(chng.previousValue);
       console.log(`${propName}: currentValue = ${cur}, previousValue = ${prev}`);
-      if (this.type_interval === 'Set Interval 1 s') {
-        this.interval = 1000
-      } else if(this.type_interval === 'Set Interval 3 s') {
-        this.interval = 3000
-      } else if(this.type_interval === 'Set Interval 5 s') {
+      if (this.type_interval === 'Set Interval 5 s') {
         this.interval = 5000
       } else if(this.type_interval === 'Set Interval 10 s') {
         this.interval = 10000
@@ -123,6 +138,10 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
         this.interval = 30000
       } else if(this.type_interval === 'Set Interval 1 m') {
         this.interval = 60000
+      } else if(this.type_interval === 'Set Interval 3 m') {
+        this.interval = 180000
+      } else if(this.type_interval === 'Set Interval 5 m') {
+        this.interval = 300000
       }
       console.log('Updated this.interval is ',this.interval)
     }
@@ -147,7 +166,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
       };
       this.options = {
         backgroundColor: echarts.bg,
-        color: ['#22CA33', '#5BBBDE', '#E6E600', '#FFA700', '#FF4C4C', '#ADADFF'],
+        color: [this.sum_color,this.a_color,this.cname_color,this.aaaa_color,this.ns_color,this.ptr_color,this.mx_color,this.other_color],
 
         tooltip: {
           trigger: 'axis',
@@ -230,15 +249,17 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
           itemHeight: 5,
           itemGap: 13,
           data: [
-            { name: 'Sum', textStyle: { color: '#22CA33' } },
-            { name: 'A', textStyle: { color: '#5BBBDE' } },
-            { name: 'AAAA', textStyle: { color: '#E6E600' } },
-            { name: 'NS', textStyle: { color: '#FFA700' } },
-            { name: 'MX', textStyle: { color: '#FF4C4C' } },
-            { name: 'Other', textStyle: { color: '#ADADFF' } }
+            { name: 'Sum', textStyle: { color: this.sum_color } },
+            { name: 'A', textStyle: { color: this.a_color } },
+            { name: 'CNAME', textStyle: { color: this.cname_color} },
+            { name: 'AAAA', textStyle: { color: this.aaaa_color } },
+            { name: 'NS', textStyle: { color: this.ns_color } },
+            { name: 'PTR', textStyle: { color: this.ptr_color} },
+            { name: 'MX', textStyle: { color: this.mx_color } },
+            { name: 'Other', textStyle: { color: this.other_color } }
           ],
           center: '0%',
-          left: "17%",
+          left: "10%",
           textStyle: {
             fontSize: 16,
             color: '#F1F1F3'
@@ -248,18 +269,26 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
         and Y axes each is allowed. Line chart, bar chart,
          and scatter chart (bubble chart) can be drawn in grid. */
         grid: [
-          { left: 80, right: 50, top: "5%", height: '11%' },
+          /*{ left: 80, right: 50, top: "5%", height: '11%' },
           { left: 80, right: 50, top: "20%", height: '11%' },
           { left: 80, right: 50, top: "35%", height: '11%' },
           { left: 80, right: 50, top: "50%", height: '11%' },
           { left: 80, right: 50, top: "65%", height: '11%' },
-          { left: 80, right: 50, top: "80%", height: '11%' }
+          { left: 80, right: 50, top: "80%", height: '11%' }*/
+          { left: 80, right: 50, top: "8%", height: '10%' },
+          { left: 80, right: 50, top: "19%", height: '10%' },
+          { left: 80, right: 50, top: "30%", height: '10%' },
+          { left: 80, right: 50, top: "41%", height: '10%' },
+          { left: 80, right: 50, top: "52%", height: '10%' },
+          { left: 80, right: 50, top: "63%", height: '10%' },
+          { left: 80, right: 50, top: "74%", height: '10%' },
+          { left: 80, right: 50, top: "85%", height: '10%' }
         ],
 
         /*dataZoom component is used for zooming a specific area, which enables 
         user to investigate data in detail, 
         or get an overview of the data, or get rid of outlier points.*/
-        dataZoom: [{
+        /*dataZoom: [{
           type: 'slider',
           start: 0,
           stop: 100,
@@ -285,8 +314,8 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             shadowOffsetX: 2,
             shadowOffsetY: 2
           },
-          xAxisIndex: [0, 1, 2, 3, 4, 5]
-        }],
+          xAxisIndex: [0, 1, 2, 3, 4, 5, 6, 7]
+        }],*/
 
         /*The x axis in cartesian(rectangular) coordinate. Usually a single grid 
         component can place at most 2 x axis, one on the bottom and another on the top.
@@ -347,12 +376,34 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             data: this.xAxisData
           },
           {
+            gridIndex: 5,
+            boundaryGap: false,
+            axisLabel: { show: false },
+            axisLine: {
+              lineStyle: {
+                color: '#57617B'
+              }
+            },
+            data: this.xAxisData
+          },
+          {
+            gridIndex: 6,
+            boundaryGap: false,
+            axisLabel: { show: false },
+            axisLine: {
+              lineStyle: {
+                color: '#57617B'
+              }
+            },
+            data: this.xAxisData
+          },
+          {
             name: 'Time',
             nameTextStyle: {
               fontSize: 15,
               color: '#F1F1F3'
             },
-            gridIndex: 5,
+            gridIndex: 7,
             boundaryGap: false,
             axisLabel: {
               textStyle: {
@@ -381,7 +432,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#22CA33'
+              color: this.sum_color
             },
             max: 'dataMax',
             splitNumber: 1,
@@ -407,9 +458,36 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#56BBDE'
+              color: this.a_color
             },
             gridIndex: 1,
+            max: 'dataMax',
+            splitNumber: 1,
+            axisTick: { show: false },
+            axisLine: {
+              lineStyle: {
+                color: '#57617B'
+              }
+            },
+            axisLabel: {
+              showMinLabel: false,
+              textStyle: {
+                fontSize: 9,
+                color: '#F1F1F3'
+              }
+            },
+            splitLine: { show: false }
+          },
+          {
+            name: 'CNAME',
+            nameLocation: 'middle',
+            nameGap: 30,
+            type: 'value',
+            nameTextStyle: {
+              fontSize: 12,
+              color: this.cname_color
+            },
+            gridIndex: 2,
             max: 'dataMax',
             splitNumber: 1,
             axisTick: { show: false },
@@ -434,9 +512,9 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#E6E600'
+              color: this.aaaa_color
             },
-            gridIndex: 2,
+            gridIndex: 3,
             max: 'dataMax',
             splitNumber: 1,
             axisTick: { show: false },
@@ -461,9 +539,36 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#FFA700'
+              color: this.ns_color
             },
-            gridIndex: 3,
+            gridIndex: 4,
+            max: 'dataMax',
+            splitNumber: 1,
+            axisTick: { show: false },
+            axisLine: {
+              lineStyle: {
+                color: '#57617B'
+              }
+            },
+            axisLabel: {
+              showMinLabel: false,
+              textStyle: {
+                fontSize: 9,
+                color: '#F1F1F3'
+              }
+            },
+            splitLine: { show: false }
+          },
+          {
+            name: 'PTR',
+            nameLocation: 'middle',
+            nameGap: 30,
+            type: 'value',
+            nameTextStyle: {
+              fontSize: 12,
+              color: this.ptr_color
+            },
+            gridIndex: 5,
             max: 'dataMax',
             splitNumber: 1,
             axisTick: { show: false },
@@ -488,9 +593,9 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#FF4C4C'
+              color: this.mx_color
             },
-            gridIndex: 4,
+            gridIndex: 6,
             max: 'dataMax',
             splitNumber: 1,
             axisTick: { show: false },
@@ -515,9 +620,9 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#ADADFF'
+              color: this.other_color
             },
-            gridIndex: 5,
+            gridIndex: 7,
             max: 'dataMax',
             splitNumber: 1,
             axisTick: { show: false },
@@ -553,7 +658,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#22CA33'
+                  offset: 0, color: this.sum_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
@@ -579,7 +684,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#5BBBDE'
+                  offset: 0, color: this.a_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
@@ -589,7 +694,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             data: this.aDataList,
           },
           {
-            name: 'AAAA',
+            name: 'CNAME',
             type: 'line',
             symbol: 'circle',
             symbolSize: 1,
@@ -605,17 +710,17 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#E6E600'
+                  offset: 0, color: this.cname_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
                 globalCoord: false,
               },
             },
-            data: this.aaaaDataList
+            data: this.cnameDataList,
           },
           {
-            name: 'NS',
+            name: 'AAAA',
             type: 'line',
             symbol: 'circle',
             symbolSize: 1,
@@ -631,17 +736,17 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#FFA700'
+                  offset: 0, color: this.aaaa_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
                 globalCoord: false,
               },
             },
-            data: this.nsDataList
+            data: this.aaaaDataList
           },
           {
-            name: 'MX',
+            name: 'NS',
             type: 'line',
             symbol: 'circle',
             symbolSize: 1,
@@ -657,7 +762,59 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#FF4C4C'
+                  offset: 0, color: this.ns_color
+                }, {
+                  offset: 1, color: echarts.bg
+                }],
+                globalCoord: false,
+              },
+            },
+            data: this.nsDataList
+          },
+          {
+            name: 'PTR',
+            type: 'line',
+            symbol: 'circle',
+            symbolSize: 1,
+            label: label,
+            lineStyle: lineStyle,
+            xAxisIndex: 5,
+            yAxisIndex: 5,
+            areaStyle: {
+              color: {
+                type: 'linear',
+                x: 0,
+                y: -0.5,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: this.ptr_color
+                }, {
+                  offset: 1, color: echarts.bg
+                }],
+                globalCoord: false,
+              },
+            },
+            data: this.ptrDataList,
+          },
+          {
+            name: 'MX',
+            type: 'line',
+            symbol: 'circle',
+            symbolSize: 1,
+            label: label,
+            lineStyle: lineStyle,
+            xAxisIndex: 6,
+            yAxisIndex: 6,
+            areaStyle: {
+              color: {
+                type: 'linear',
+                x: 0,
+                y: -0.5,
+                x2: 0,
+                y2: 1,
+                colorStops: [{
+                  offset: 0, color: this.mx_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
@@ -673,8 +830,8 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
             symbolSize: 1,
             label: label,
             lineStyle: lineStyle,
-            xAxisIndex: 5,
-            yAxisIndex: 5,
+            xAxisIndex: 7,
+            yAxisIndex: 7,
             areaStyle: {
               color: {
                 type: 'linear',
@@ -683,7 +840,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
                 x2: 0,
                 y2: 0.7,
                 colorStops: [{
-                  offset: 0, color: '#ADADFF'
+                  offset: 0, color: this.other_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],

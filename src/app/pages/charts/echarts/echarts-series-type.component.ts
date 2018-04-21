@@ -36,10 +36,8 @@ import { NbThemeService } from '@nebular/theme';
   `,
 })
 export class EchartsSeriesTypeComponent implements OnDestroy {
-  type_data = 'Data in 1 h';
-  types_data = ['Data in 1 h','Data in 24 h', 'Data in 3 d', 'Data in 7 d', 'Data in 30 d'];
   type_interval = 'Set Interval 5 s';
-  types_interval = ['Set Interval 1 s','Set Interval 3 s', 'Set Interval 5 s', 'Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 1 m'];
+  types_interval = ['Set Interval 5 s','Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 1 m', 'Set Interval 3 m', 'Set Interval 5 m'];
   currentTheme: string;
   themeSubscription: any;
 

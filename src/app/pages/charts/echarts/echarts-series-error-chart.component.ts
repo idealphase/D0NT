@@ -1,5 +1,7 @@
-import { AfterViewInit, Component, OnDestroy } from '@angular/core';
+import { AfterViewInit, Component, OnDestroy, Input , OnChanges, SimpleChanges, ChangeDetectorRef, OnInit } from '@angular/core';
 import { NbThemeService } from '@nebular/theme';
+import { MomentModule } from 'ngx-moment';
+import { ElasticsearchService } from '../../../elasticsearch.service';
 
 @Component({
   selector: 'ngx-echarts-series-error-chart',
@@ -7,20 +9,127 @@ import { NbThemeService } from '@nebular/theme';
     <div echarts [options]="options" class="echart"></div>
   `,
 })
-export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestroy {
-  type = '24h';
-  types = ['24h', '3d', '7d', '30d'];
+export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestroy , OnChanges {
+  @Input() type_interval: string;
   options: any = {};
   themeSubscription: any;
+  sumDataList = []
+  nxdomainDataList = []
+  refusedDataList = []
+  servfailDataList = []
+  formerrDataList = []
+  private numberOfPoint: number;
+  private interval: number;
+  currentTheme: string;
+  currentTime: any;
+  currentTime_year: any;
+  currentTime_month: any;
+  currentTime_date: any;
+  prevTime_timestamp_s: any;
+  currentTime_timestamp_s: any;
+  xAxisData = []
+  delay_time = 240
 
-  constructor(private theme: NbThemeService) {
+  //color of echart
+  sum_color = "#E74C3C"
+  nxdomain_color = "#2980B9"
+  refused_color = "#388E3C"
+  servfail_color = "#F39C12"
+  formerr_color = "#FFEE58"
+  // ptr_color = "#8BC34A"
+  // mx_color = "#F39C12"
+  // other_color = "#FFEE58"
+
+  async getError(){
+    this.currentTime = new Date();
+    this.currentTime_year = this.currentTime.getFullYear();
+    this.currentTime_month = ("0"+(this.currentTime.getMonth()+1)).slice(-2);
+    this.currentTime_date = ("0"+this.currentTime.getDate()).slice(-2);
+    this.prevTime_timestamp_s = this.currentTime_timestamp_s;
+    this.currentTime_timestamp_s = Math.round((this.currentTime.getTime()-this.delay_time)/1000);
+    console.log("prev time ",this.prevTime_timestamp_s,"current time ",this.currentTime_timestamp_s)
+    //console.log(this.currentTime_timestamp_s) // 1524216488
+    //console.log(this.currentTime_year,this.currentTime_month,this.currentTime_date,this.currentTime_timestamp_s);
+    var isTodayIndexExist = await this.es.checkTodayIndexExist(this.currentTime_year,this.currentTime_month,this.currentTime_date)
+    //create today index in case don't have index exist
+    if(isTodayIndexExist === false){
+      await this.es.createTodayIndex(this.currentTime_year,this.currentTime_month,this.currentTime_date)
+      console.log("[+] Created today index , ","filebeat-6.2.2-".concat(this.currentTime_year+"."+this.currentTime_month+"."+this.currentTime_date))
+    }
+    var tempDNS =  await this.es.getErrorDocuments(this.currentTime_year,this.currentTime_month,this.currentTime_date,this.prevTime_timestamp_s,this.currentTime_timestamp_s);
+    console.log(tempDNS)
+    if(this.xAxisData.length > this.numberOfPoint){
+      this.xAxisData.shift()
+    }
+    this.xAxisData.push(this.currentTime)
+
+    if(this.sumDataList.length > this.numberOfPoint){
+      this.sumDataList.shift()
+    }
+    this.sumDataList.push(tempDNS["SUM"])
+
+    if(this.nxdomainDataList.length > this.numberOfPoint){
+      this.nxdomainDataList.shift()
+    }
+    this.nxdomainDataList.push(tempDNS["NXDOMAIN"])
+
+    if(this.refusedDataList.length > this.numberOfPoint){
+      this.refusedDataList.shift()
+    }
+    this.refusedDataList.push(tempDNS["REFUSED"])
+
+    if(this.servfailDataList.length > this.numberOfPoint){
+      this.servfailDataList.shift()
+    }
+    this.servfailDataList.push(tempDNS["SERVFAIL"]);
+
+    if(this.formerrDataList.length > this.numberOfPoint){
+      this.formerrDataList.shift()
+    }
+    this.formerrDataList.push(tempDNS["FORMERR"])
   }
 
-  ngAfterViewInit() {
-    this.themeSubscription = this.theme.getJsTheme().subscribe(config => {
+  sleep = (time) => new Promise((resolve, reject) => {
+    this.cd.detectChanges();
+    setTimeout(resolve, time);
+  })
+
+  constructor(private es: ElasticsearchService,private themeService: NbThemeService,private cd: ChangeDetectorRef) {
+    this.interval = 5000;
+    this.numberOfPoint = 60;
+    this.themeSubscription = this.themeService.getJsTheme().subscribe(theme => {
+      this.currentTheme = theme.name;
+    });
+    this.currentTime_timestamp_s = Math.round((new Date().getTime()-this.delay_time)/1000);
+  }
+
+  ngOnChanges(changes: SimpleChanges) {
+    for (let propName in changes){
+      let chng = changes[propName];
+      let cur  = JSON.stringify(chng.currentValue);
+      let prev = JSON.stringify(chng.previousValue);
+      console.log(`${propName}: currentValue = ${cur}, previousValue = ${prev}`);
+      if (this.type_interval === 'Set Interval 5 s') {
+        this.interval = 5000
+      } else if(this.type_interval === 'Set Interval 10 s') {
+        this.interval = 10000
+      } else if(this.type_interval === 'Set Interval 30 s') {
+        this.interval = 30000
+      } else if(this.type_interval === 'Set Interval 1 m') {
+        this.interval = 60000
+      } else if(this.type_interval === 'Set Interval 3 m') {
+        this.interval = 180000
+      } else if(this.type_interval === 'Set Interval 5 m') {
+        this.interval = 300000
+      }
+      console.log('Updated this.interval is ',this.interval)
+    }
+  }
+
+  drawEchart(){
+    this.themeSubscription = this.themeService.getJsTheme().subscribe(config => {
       const colors: any = config.variables;
       const echarts: any = config.variables.echarts;
-      var xAxisData = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30];
       var lineStyle = {
         normal: {
           width: 1
@@ -36,7 +145,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
       };
       this.options = {
         backgroundColor: echarts.bg,
-        color: ['#22CA33', '#5BBBDE', '#E6E600', '#FFA700', '#FF4C4C', '#ADADFF'],
+        color: [this.sum_color,this.nxdomain_color,this.refused_color,this.servfail_color,this.formerr_color],
       
       tooltip: {
           trigger: 'axis',
@@ -119,12 +228,11 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
           itemHeight: 5,
           itemGap: 13,
           data: [
-            {name:'Sum',textStyle:{color:'#22CA33'}}, 
-            {name:'NXDOMAIN',textStyle:{color:'#5BBBDE'}}, 
-            {name:'REFUSED',textStyle:{color:'#E6E600'}},
-            {name:'SERVFAIL',textStyle:{color:'#FFA700'}},
-            {name:'FORMERR',textStyle:{color:'#FF4C4C'}},
-            {name:'Other',textStyle:{color:'#ADADFF'}}
+            {name:'Sum',textStyle:{color:this.sum_color}}, 
+            {name:'NXDOMAIN',textStyle:{color:this.nxdomain_color}}, 
+            {name:'REFUSED',textStyle:{color:this.refused_color}},
+            {name:'SERVFAIL',textStyle:{color:this.servfail_color}},
+            {name:'FORMERR',textStyle:{color:this.formerr_color}},
           ],
           center: '0%',
           left: "10%",
@@ -137,18 +245,17 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
         and Y axes each is allowed. Line chart, bar chart,
          and scatter chart (bubble chart) can be drawn in grid. */
         grid: [
-          { left: 80, right: 50, top: "5%", height: '11%' },
-          { left: 80, right: 50, top: "20%", height: '11%' },
-          { left: 80, right: 50, top: "35%", height: '11%' },
-          { left: 80, right: 50, top: "50%", height: '11%' },
-          { left: 80, right: 50, top: "65%", height: '11%' },
-          { left: 80, right: 50, top: "80%", height: '11%' }
+          { left: 80, right: 50, top: "8%", height: '17%' },
+          { left: 80, right: 50, top: "26%", height: '17%' },
+          { left: 80, right: 50, top: "44%", height: '17%' },
+          { left: 80, right: 50, top: "62%", height: '17%' },
+          { left: 80, right: 50, top: "80%", height: '17%' }
         ],
 
         /*dataZoom component is used for zooming a specific area, which enables 
         user to investigate data in detail, 
         or get an overview of the data, or get rid of outlier points.*/
-        dataZoom: [{
+        /*dataZoom: [{
           type: 'slider',
           start: 0,
           stop: 100,
@@ -175,7 +282,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
             shadowOffsetY: 2
           },
           xAxisIndex: [0, 1, 2, 3, 4, 5]
-        }],
+        }],*/
 
         /*The x axis in cartesian(rectangular) coordinate. Usually a single grid 
         component can place at most 2 x axis, one on the bottom and another on the top.
@@ -189,7 +296,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             gridIndex: 1,
@@ -200,7 +307,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             gridIndex: 2,
@@ -211,7 +318,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 color: '#57617B'
               }
             },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             gridIndex: 3,
@@ -222,18 +329,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 color: '#57617B'
               }
             },
-            data: xAxisData
-          },
-          {
-            gridIndex: 4,
-            boundaryGap: false,
-            axisLabel: { show: false },
-            axisLine: {
-              lineStyle: {
-                color: '#57617B'
-              }
-            },
-            data: xAxisData
+            data: this.xAxisData
           },
           {
             name: 'Time',
@@ -241,7 +337,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
               fontSize: 15,
               color: '#F1F1F3'
             },
-            gridIndex: 5,
+            gridIndex: 4,
             boundaryGap: false,
             axisLabel: {
               textStyle: {
@@ -254,7 +350,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 color: '#57617B'
               }
             },
-            data: xAxisData,
+            data: this.xAxisData,
           }
         ],
 
@@ -270,7 +366,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#22CA33'
+              color: this.sum_color
             },
             max: 'dataMax',
             splitNumber: 1,
@@ -296,7 +392,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#56BBDE'
+              color: this.nxdomain_color
             },
             gridIndex: 1,
             max: 'dataMax',
@@ -323,7 +419,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#E6E600'
+              color: this.refused_color
             },
             gridIndex: 2,
             max: 'dataMax',
@@ -350,7 +446,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#FFA700'
+              color: this.servfail_color
             },
             gridIndex: 3,
             max: 'dataMax',
@@ -377,7 +473,7 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
             type: 'value',
             nameTextStyle: {
               fontSize: 12,
-              color: '#FF4C4C'
+              color: this.formerr_color
             },
             gridIndex: 4,
             max: 'dataMax',
@@ -397,33 +493,6 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
             },
             splitLine: { show: false }
           },
-          {
-            name: 'Other',
-            nameLocation: 'middle',
-            nameGap: 30,
-            type: 'value',
-            nameTextStyle: {
-              fontSize: 12,
-              color: '#ADADFF'
-            },
-            gridIndex: 5,
-            max: 'dataMax',
-            splitNumber: 1,
-            axisTick: { show: false },
-            axisLine: {
-              lineStyle: {
-                color: '#57617B'
-              }
-            },
-            axisLabel: {
-              showMinLabel: false,
-              textStyle: {
-                fontSize: 9,
-                color: '#F1F1F3'
-              }
-            },
-            splitLine: { show: false }
-          }
         ],
 
         series: [
@@ -442,14 +511,14 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#22CA33'
+                  offset: 0, color: this.sum_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
                 globalCoord: false,
               },
             },
-            data: [100, 132, 101, 134, 90, 230, 100, 132, 101, 134, 90, 230, 100, 132, 101, 134, 90, 230],
+            data: this.sumDataList,
           },
           {
             name: 'NXDOMAIN',
@@ -468,14 +537,14 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#5BBBDE'
+                  offset: 0, color: this.nxdomain_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
                 globalCoord: false,
               },
             },
-            data: [220, 182, 191, 234, 290, 330, 220, 182, 191, 234, 290, 330, 220, 182, 191, 234, 290, 330],
+            data: this.nxdomainDataList
           },
           {
             name: 'REFUSED',
@@ -494,14 +563,14 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#E6E600'
+                  offset: 0, color: this.refused_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
                 globalCoord: false,
               },
             },
-            data: [150, 232, 201, 154, 190, 330, 150, 232, 201, 154, 190, 330, 150, 232, 201, 154, 190, 330],
+            data: this.refusedDataList
           },
           {
             name: 'SERVFAIL',
@@ -520,14 +589,14 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#FFA700'
+                  offset: 0, color: this.servfail_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
                 globalCoord: false,
               },
             },
-            data: [320, 332, 301, 334, 390, 330, 320, 332, 301, 334, 390, 330, 320, 332, 301, 334, 390, 330],
+            data: this.servfailDataList
           },
           {
             name: 'FORMERR',
@@ -546,46 +615,26 @@ export class EchartsSeriesErrorChartComponent implements AfterViewInit, OnDestro
                 x2: 0,
                 y2: 1,
                 colorStops: [{
-                  offset: 0, color: '#FF4C4C'
+                  offset: 0, color: this.formerr_color
                 }, {
                   offset: 1, color: echarts.bg
                 }],
                 globalCoord: false,
               },
             },
-            data: [820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330],
-          },
-          {
-            name: 'Other',
-            type: 'line',
-            symbol: 'circle',
-            symbolSize: 1,
-            label: label,
-            lineStyle: lineStyle,
-            xAxisIndex: 5,
-            yAxisIndex: 5,
-            areaStyle: {
-              color: {
-                type: 'linear',
-                x: 0,
-                y: -0.5,
-                x2: 0,
-                y2: 0.7,
-                colorStops: [{
-                  offset: 0, color: '#ADADFF'
-                }, {
-                  offset: 1, color: echarts.bg
-                }],
-                globalCoord: false,
-              },
-            },
-            data: [820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330, 820, 932, 901, 934, 1290, 1330],
+            data: this.formerrDataList
           },
         ],
-
-
       };
     });
+  }
+
+  async ngAfterViewInit() {
+    while (true){
+      this.getError()
+      this.drawEchart()
+      await this.sleep(this.interval)
+    }
   }
 
   ngOnDestroy(): void {
