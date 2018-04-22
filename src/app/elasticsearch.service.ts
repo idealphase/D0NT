@@ -33,7 +33,7 @@ export class ElasticsearchService {
   checkTodayIndexExist(_year,_month,_date): any {
     return new Promise((resolve,reject) =>{
       this.client.indices.exists({
-        index: "filebeat-6.2.2-".concat(_year+"."+_month+"."+_date),
+        index: "filebeat-6.2.4-".concat(_year+"."+_month+"."+_date),
       }).then( (res) => {
         resolve(res);
       }, (err) =>{
@@ -45,7 +45,7 @@ export class ElasticsearchService {
   createTodayIndex(_year,_month,_date): any {
     return new Promise((resolve,reject) =>{
       this.client.indices.create({
-      index: "filebeat-6.2.2-".concat(_year+"."+_month+"."+_date),
+      index: "filebeat-6.2.4-".concat(_year+"."+_month+"."+_date),
     }).then((res) =>{
       resolve(res);
     }, (err) =>{
@@ -57,7 +57,7 @@ export class ElasticsearchService {
   getDNSDocuments(_year,_month,_date,_prev_timestamp,_timestamp_s): any {
     return new Promise((resolve, reject) => {
       this.client.search({
-        index: "filebeat-6.2.2-".concat(_year+"."+_month+"."+_date),
+        index: "filebeat-6.2.4-".concat(_year+"."+_month+"."+_date),
         type: "doc",
         body: {
           'query':{
@@ -117,7 +117,7 @@ export class ElasticsearchService {
   getErrorDocuments(_year,_month,_date,_prev_timestamp,_timestamp_s): any {
     return new Promise((resolve, reject) => {
       this.client.search({
-        index: "filebeat-6.2.2-".concat(_year+"."+_month+"."+_date),
+        index: "filebeat-6.2.4-".concat(_year+"."+_month+"."+_date),
         type: "doc",
         body: {
           'query':{
