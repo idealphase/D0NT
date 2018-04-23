@@ -22,8 +22,8 @@ import { ChangeDetectionStrategy } from '@angular/compiler/src/core';
 
 export class SmartTableComponent implements OnInit , OnDestroy{
   private interval: number;
-  type = 'Set Interval 5 s';
-  types = ['Set Interval 1 s','Set Interval 3 s', 'Set Interval 5 s', 'Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 1 m'];
+  // type = 'Set Interval 5 s';
+  // types = ['Set Interval 5 s','Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 10 s', 'Set Interval 30 s', 'Set Interval 1 m'];
   currentTheme: string;
   themeSubscription: any;
   source: LocalDataSource = new LocalDataSource ;
@@ -39,19 +39,19 @@ export class SmartTableComponent implements OnInit , OnDestroy{
   async ngOnInit(){
     while (true) {
       this.source.load(await this.getAlert());
-      if (this.type === 'Set Interval 1 s') {
-        this.interval = 1000
-      } else if(this.type === 'Set Interval 3 s') {
-        this.interval = 3000
-      } else if(this.type === 'Set Interval 5 s') {
-        this.interval = 5000
-      } else if(this.type === 'Set Interval 10 s') {
-        this.interval = 10000
-      } else if(this.type === 'Set Interval 30 s') {
-        this.interval = 30000
-      } else if(this.type === 'Set Interval 1 m') {
-        this.interval = 60000
-      }
+      // if (this.type === 'Set Interval 1 s') {
+      //   this.interval = 1000
+      // } else if(this.type === 'Set Interval 3 s') {
+      //   this.interval = 3000
+      // } else if(this.type === 'Set Interval 5 s') {
+      //   this.interval = 5000
+      // } else if(this.type === 'Set Interval 10 s') {
+      //   this.interval = 10000
+      // } else if(this.type === 'Set Interval 30 s') {
+      //   this.interval = 30000
+      // } else if(this.type === 'Set Interval 1 m') {
+      //   this.interval = 60000
+      // }
       //console.log(`interval: ${this.interval}`);
       await this.sleep(this.interval);
     }
