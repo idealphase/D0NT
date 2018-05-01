@@ -61,7 +61,7 @@
 </div>
 -->
 <div class="row">
-
+      <!--
       <div class="col-md-3">
         <ngx-status-card title="DNS Packet Count">
         </ngx-status-card>
@@ -78,6 +78,7 @@
         <ngx-status-card title="Alert Count">
         </ngx-status-card>
       </div>
+      -->
     
   
   
@@ -90,4 +91,23 @@
   <div class="col-xxxl-12 col-md-12 col-lg-12">
     <ngx-smart-table></ngx-smart-table>
   </div>
+  <div class="col-lg-6">
+  <nb-card>
+    <nb-card-header stype="font-size: 30px;">Add another legitimate domain</nb-card-header>
+    <nb-card-body>
+      <div class="input-group">
+ 
+        <!--
+        <input  type="text" placeholder="scb.com" class="form-control" required>
+        <div class="container-btn">
+          <button (click)="onAddLegitimateConfirm($event)" class="btn btn-success btn-demo">Add! </button>
+        </div>
+        -->
+        <input [(ngModel)]="domain" #ctrl="ngModel" type="text" placeholder="scb.com" class="form-control" required>
+        <button (click)="onAddLegitimateConfirm()" class="btn btn-success btn-demo">Add!</button>
+        
+      </div>
+    </nb-card-body>
+  </nb-card>
+</div>
 </div>

@@ -60,7 +60,7 @@ export class EchartsSeriesTypeChartComponent implements AfterViewInit, OnDestroy
     //create today index in case don't have index exist
     if(isTodayIndexExist === false){
       await this.es.createTodayIndex(this.currentTime_year,this.currentTime_month,this.currentTime_date)
-      console.log("[+] Created today index , ","filebeat-6.2.2-".concat(this.currentTime_year+"."+this.currentTime_month+"."+this.currentTime_date))
+      console.log("[+] Created today index , ","filebeat-6.2.4-".concat(this.currentTime_year+"."+this.currentTime_month+"."+this.currentTime_date))
     }
     var tempDNS =  await this.es.getDNSDocuments(this.currentTime_year,this.currentTime_month,this.currentTime_date,this.prevTime_timestamp_s,this.currentTime_timestamp_s);
     console.log(tempDNS)

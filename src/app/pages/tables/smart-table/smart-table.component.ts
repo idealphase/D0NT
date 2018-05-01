@@ -11,6 +11,7 @@ import { interval } from 'rxjs/observable/interval';
 import { AlertSource, Alert } from '../../dashboard/alert/alert.interface';
 import { NbThemeService } from '@nebular/theme';
 import { ChangeDetectionStrategy } from '@angular/compiler/src/core';
+//import { ToasterService, ToasterConfig, Toast, BodyOutputType } from 'angular2-toaster';
 
 
 @Component({
@@ -62,6 +63,11 @@ export class SmartTableComponent implements OnInit , OnDestroy{
       deleteButtonContent: '<i class="nb-trash"></i>',
       confirmDelete: true,
     },
+    /*edit: {
+      editButtonContent: '<i class="nb-edit"></i>',
+      saveButtonContent: '<i class="nb-checkmark"></i>',
+      cancelButtonContent: '<i class="nb-close"></i>',
+    },*/
     actions: {
       add: false,
       edit: false,

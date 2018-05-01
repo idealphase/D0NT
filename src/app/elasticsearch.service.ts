@@ -1,6 +1,7 @@
 import { Injectable, ErrorHandler } from '@angular/core';
 import { Client } from 'elasticsearch';
 import { Observable } from 'rxjs';
+
 import 'rxjs/Rx';
 //import { resolve } from 'path';
 //import { reject } from 'q';
@@ -168,6 +169,19 @@ export class ElasticsearchService {
         type: "doc",
         id: _id,
       });  
+  }
+
+  addLegitimateDomain(_domain,_id): any{
+    return this.client.create({
+        index: "legitimate_domain_name",
+        type: "doc*",
+        id: _id,
+        body:{
+          source: "DNSRadar",
+          domain: _domain,
+          //created_date: new Date().toUTCString()
+        }
+    });
   }
 
   getAlertDocuments(): any {

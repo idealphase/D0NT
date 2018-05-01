@@ -70,7 +70,8 @@ export const COSMIC_THEME = {
     },
 
     echarts: {
-      bg: '#3d3780',
+      //bg: '#3d3780',
+      bg:'#253447' ,
       textColor: '#ffffff',
       axisLineColor: '#a1a1e5',
       splitLineColor: '#342e73',
